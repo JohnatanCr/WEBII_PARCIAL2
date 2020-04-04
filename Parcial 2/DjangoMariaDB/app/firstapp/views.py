@@ -17,6 +17,7 @@ def isJson(myJson):
     except ValueError as e:
         return False
     return True
+
 def showMovieList(request):
     #VALIDATE METHOD
     responseData = {}
@@ -39,7 +40,7 @@ def showMovieList(request):
                     userDB = ApiUsers.objects.get(user = jsonData['user'])
                 except Exception as e:
                     responseMessage = "The user does not exist or the password is incorrect"
-                    responseData['result'] = 'error'
+                    responseData['result'] = 'ERROR'
                     responseData['message'] = responseMessage
                     return JsonResponse(responseData,status=401)
                 #TAKE PASSWORD OF THE USER
@@ -62,19 +63,28 @@ def showMovieList(request):
                 #USUARIO EXISTE Y CREDENCIALES VALIDAS
                 #print(str(request.headers['user-api-key']))
                 if (ApiKey().check(request)):
-                    responseData['result'] = 'SUCCSESS'
-                    responseData['message'] = 'Valid Credentials'
-                    responseData['userApiKey'] = userDB.api_key
-                    responseData["movies"] = {}
-                    movies = []
-                    for i in Movie.objects.all():
-                        movies.append({"id" : i.movieid,
-                        "title" : i.movietitle,
-                        "releaseDate" : i.releasedate,
-                        "imageUrl" : i.imageurl})
+                    if (request.headers["user-api-key"] == userDB.api_key):
+                        responseData['result'] = 'SUCCESS'
+                        responseData["movies"] = {}
+                        movies = []
+                        for i in Movie.objects.all():
+                            movies.append({"id" : i.movieid,
+                            "title" : i.movietitle,
+                            "releaseDate" : i.releasedate,
+                            "imageUrl" : i.imageurl})
 
-                    responseData["movies"] = movies
-                    return JsonResponse(responseData,status=200)
+                        responseData["movies"] = movies
+                        return JsonResponse(responseData,status=200)
+                    else:
+                        responseData['result'] = 'ERROR'
+                        responseMessage = "Invalid Api-Key"
+                        responseData['message'] = responseMessage
+                        return JsonResponse(responseData, status = 400)
+                else:
+                    responseData['result'] = 'ERROR'
+                    responseMessage = "Invalid Api-Key"
+                    responseData['message'] = responseMessage
+                    return JsonResponse(responseData, status = 400)
         else:
             responseData['result'] = 'ERROR'
             responseMessage = "JSON Invalid Structure"
@@ -84,8 +94,8 @@ def showMovieList(request):
         #print(responseMessage)
         return JsonResponse(responseData)
     else:
-        responseData['result'] = 'error'
-        responseData['message'] = 'no es post'
+        responseData['result'] = 'ERROR'
+        responseData['message'] = 'Invalid Request'
         return JsonResponse(responseData, status=400)
 
 def login(request):
@@ -107,11 +117,10 @@ def login(request):
             #CHECK IF USER EXIST
             else:
                 try:
-                    print("PASE AQUI")
                     userDB = ApiUsers.objects.get(user = jsonData['user'])
                 except Exception as e:
                     responseMessage = "The user does not exist or the password is incorrect"
-                    responseData['result'] = 'error'
+                    responseData['result'] = 'ERROR'
                     responseData['message'] = responseMessage
                     return JsonResponse(responseData,status=401)
                 #TAKE PASSWORD OF THE USER
@@ -131,7 +140,7 @@ def login(request):
                 responseData['message'] = responseMessage
                 return JsonResponse(responseData, status=401)
             else:
-                responseData['result'] = 'SUCCSESS'
+                responseData['result'] = 'SUCCESS'
                 responseData['message'] = 'Valid Credentials'
                 responseData['userApiKey'] = userDB.api_key
                 return JsonResponse(responseData,status=200)
@@ -144,8 +153,8 @@ def login(request):
         #print(responseMessage)
         return JsonResponse(responseData)
     else:
-        responseData['result'] = 'error'
-        responseData['message'] = 'no es post'
+        responseData['result'] = 'ERROR'
+        responseData['message'] = 'Invalid REQUEST'
         return JsonResponse(responseData, status=400)
 
 
