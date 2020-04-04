@@ -21,7 +21,7 @@ def isJson(myJson):
 def showMovieList(request):
     #VALIDATE METHOD
     responseData = {}
-    if request.method == 'GET':
+    if request.method == 'POST':
         #DECLARE RESPONS
         responseMessage = ""
         #CHECK JSON STRUCTURE
@@ -63,6 +63,9 @@ def showMovieList(request):
                 #USUARIO EXISTE Y CREDENCIALES VALIDAS
                 #print(str(request.headers['user-api-key']))
                 if (ApiKey().check(request)):
+                    print ("HEADER:  " + request.headers["user-api-key"])
+                    print ("DB:  " + userDB.api_key)
+
                     if (request.headers["user-api-key"] == userDB.api_key):
                         responseData['result'] = 'SUCCESS'
                         responseData["movies"] = {}
@@ -77,7 +80,7 @@ def showMovieList(request):
                         return JsonResponse(responseData,status=200)
                     else:
                         responseData['result'] = 'ERROR'
-                        responseMessage = "Invalid Api-Key"
+                        responseMessage = "Invalid Api-Key, incorrect or not existing api"
                         responseData['message'] = responseMessage
                         return JsonResponse(responseData, status = 400)
                 else:
@@ -132,6 +135,7 @@ def login(request):
                 #CHECK IF USER HAS API-KEY
                 elif (userDB.api_key == None):
                     genApiKey = ApiKey().generate_key_complex()
+                    print("API : " + genApiKey)
                     userDB.api_key = genApiKey
                     userDB.save()
 
@@ -142,8 +146,10 @@ def login(request):
             else:
                 responseData['result'] = 'SUCCESS'
                 responseData['message'] = 'Valid Credentials'
-                responseData['userApiKey'] = userDB.api_key
+                print("USR : " + userDB.api_key)
+                responseData["userApiKey"] = userDB.api_key
                 return JsonResponse(responseData,status=200)
+
         else:
             responseData['result'] = 'ERROR'
             responseMessage = "JSON Invalid Structure"
