@@ -17,6 +17,77 @@ def isJson(myJson):
     except ValueError as e:
         return False
     return True
+def showMovieList(request):
+    #VALIDATE METHOD
+    responseData = {}
+    if request.method == 'GET':
+        #DECLARE RESPONS
+        responseMessage = ""
+        #CHECK JSON STRUCTURE
+        is_Json = isJson(request.body)
+        if (is_Json):
+            jsonData = json.loads(request.body)
+            #CHECK JSON CONTENT
+            if "user" not in jsonData:
+                responseMessage = "missing USER, requiered"
+            elif "password" not in jsonData:
+                responseMessage = "missing PASSWORD, requiered"
+            #CHECK IF USER EXIST
+            else:
+                try:
+                    #   print("PASE AQUI")
+                    userDB = ApiUsers.objects.get(user = jsonData['user'])
+                except Exception as e:
+                    responseMessage = "The user does not exist or the password is incorrect"
+                    responseData['result'] = 'error'
+                    responseData['message'] = responseMessage
+                    return JsonResponse(responseData,status=401)
+                #TAKE PASSWORD OF THE USER
+                password = jsonData['password']
+                currentPasswordHash = userDB.password
+                #CHECK IF PASSWORD IS CORRECT
+                if (check_password(password,currentPasswordHash) == False):
+                    responseMessage = "The user does not exist or the password is incorrect"
+                #CHECK IF USER HAS API-KEY
+                elif (userDB.api_key == None):
+                    genApiKey = ApiKey().generate_key_complex()
+                    userDB.api_key = genApiKey
+                    userDB.save()
+
+            if (responseMessage != ""):
+                responseData['result'] = 'ERROR'
+                responseData['message'] = responseMessage
+                return JsonResponse(responseData, status=401)
+            else:
+                #USUARIO EXISTE Y CREDENCIALES VALIDAS
+                #print(str(request.headers['user-api-key']))
+                if (ApiKey().check(request)):
+                    responseData['result'] = 'SUCCSESS'
+                    responseData['message'] = 'Valid Credentials'
+                    responseData['userApiKey'] = userDB.api_key
+                    responseData["movies"] = {}
+                    movies = []
+                    for i in Movie.objects.all():
+                        movies.append({"id" : i.movieid,
+                        "title" : i.movietitle,
+                        "releaseDate" : i.releasedate,
+                        "imageUrl" : i.imageurl})
+
+                    responseData["movies"] = movies
+                    return JsonResponse(responseData,status=200)
+        else:
+            responseData['result'] = 'ERROR'
+            responseMessage = "JSON Invalid Structure"
+            responseData['message'] = responseMessage
+
+        #RETURN RESPONSE
+        #print(responseMessage)
+        return JsonResponse(responseData)
+    else:
+        responseData['result'] = 'error'
+        responseData['message'] = 'no es post'
+        return JsonResponse(responseData, status=400)
+
 def login(request):
 
     #VALIDATE METHOD
@@ -39,7 +110,7 @@ def login(request):
                     print("PASE AQUI")
                     userDB = ApiUsers.objects.get(user = jsonData['user'])
                 except Exception as e:
-                    responseMessage = "The user does not exist"
+                    responseMessage = "The user does not exist or the password is incorrect"
                     responseData['result'] = 'error'
                     responseData['message'] = responseMessage
                     return JsonResponse(responseData,status=401)
