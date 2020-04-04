@@ -39,7 +39,7 @@ def login(request):
                     print("PASE AQUI")
                     userDB = ApiUsers.objects.get(user = jsonData['user'])
                 except Exception as e:
-                    responseMessage = "The user does not exist or the password is incorrect"
+                    responseMessage = "The user does not exist"
                     responseData['result'] = 'error'
                     responseData['message'] = responseMessage
                     return JsonResponse(responseData,status=401)
@@ -54,16 +54,16 @@ def login(request):
                     genApiKey = ApiKey().generate_key_complex()
                     userDB.api_key = genApiKey
                     userDB.save()
-                else:
-                    responseData['result'] = 'SUCCSESS'
-                    responseData['message'] = 'Valid Credentials'
-                    responseData['userApiKey'] = userDB.api_key
-                    return JsonResponse(responseData,status=200)
 
             if (responseMessage != ""):
                 responseData['result'] = 'ERROR'
                 responseData['message'] = responseMessage
                 return JsonResponse(responseData, status=401)
+            else:
+                responseData['result'] = 'SUCCSESS'
+                responseData['message'] = 'Valid Credentials'
+                responseData['userApiKey'] = userDB.api_key
+                return JsonResponse(responseData,status=200)
         else:
             responseData['result'] = 'ERROR'
             responseMessage = "JSON Invalid Structure"
@@ -74,7 +74,7 @@ def login(request):
         return JsonResponse(responseData)
     else:
         responseData['result'] = 'error'
-        responseData['message'] = 'Invalid Request'
+        responseData['message'] = 'no es post'
         return JsonResponse(responseData, status=400)
 
 
